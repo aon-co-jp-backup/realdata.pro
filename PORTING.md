@@ -173,8 +173,9 @@ GitHub は1リポジトリあたり10GBを推奨上限としている。`RRD_ARC
   実データにつれて大きくなり続けることはない。
 - **容量の確認**: GitHub API(`GET /repos/{owner}/{repo}`)で現在のシャードのサイズ(バイト)を、
   10分に1回だけ確認する(書き込みのたびに API を叩くと遅く・レート制限にも近づくため)。
-  しきい値は既定 **8GB**(環境変数 `RRD_ARCHIVE_THRESHOLD_GB` で変更可、GitHub の推奨上限10GBに
-  余裕を持たせてある)。
+  しきい値は既定 **1GB**(2026-10-03に8GBから変更。GitHub の推奨は1リポジトリ1GB未満・ソフト上限5GBのため。
+  環境変数 `RRD_ARCHIVE_THRESHOLD_GB` で変更可)。作成からの平均増加ペースで、しきい値到達まで14日以内と
+  見込めたら**次のシャードを先行作成**する(書き込み先の切り替えはしきい値到達時)。
 - **引っ越し**: しきい値を超えたら、GitHub API(`POST /orgs/{owner}/repos` または `/user/repos`)で
   `<プレフィックス>-<連番>`(例: `realdata-archive-2`)という名前の非公開リポジトリを自動作成し、
   以後の書き込みはすべてそちらへ向ける。古いシャードは「封印済み(sealed)」として読み込み専用のまま
@@ -189,7 +190,17 @@ GitHub は1リポジトリあたり10GBを推奨上限としている。`RRD_ARC
 - 開発機での検証: 単体テスト(`vault::tests`・`github::tests`)と、既存の `archive`/`store` の
   テストがすべて通ることを確認した(GitHub の実 API・実リポジトリ作成は未検証。トークンを用意した
   うえで VPS でのデプロイ後に確認する)。
-- 未実施: 実際に8GBへ到達させての引っ越しの実地検証(データ量的に当面先になる見込み)。
+- 未実施: 実際にしきい値へ到達させての引っ越しの実地検証(現在のシャードは約0.9MBで当面先になる見込み。
+  実地の通し検証は、使い捨てシャードで行う手順を下記「お引越しの手動確認手順」に記す)。
+
+### お引越しの手動確認手順(2026-10-14)
+
+1. `RRD_ARCHIVE_THRESHOLD_GB` を極小(例 `0.000001`)にした**検証用インスタンス**を、本番とは別の
+   `RRD_ARCHIVE_REPO`・`RRD_CATALOG_REPO`(使い捨ての非公開リポジトリ)で起動する(本番のシャードには書かない)。
+2. GraphQL `saveDataset` で数件保存 → 10分以内の容量確認で新シャード `<プレフィックス>-2` が自動作成され、
+   以後の書き込み先が切り替わることをログ(`保管庫 … が上限に近づきました`)と `catalog.json` で確認する。
+3. 旧シャードのデータが読めること(`datasets` 一覧・版の履歴)を確認する。
+4. 検証用リポジトリは確認後に削除する。
 
 ### Automatic multi-repository failover for the archive (2026-09-28, English)
 
@@ -204,8 +215,10 @@ prepared in advance.
   with the amount of data stored.
 - **Capacity check**: the current shard's size (bytes) is checked via the GitHub API
   (`GET /repos/{owner}/{repo}`) at most once every 10 minutes (checking on every write would be slow and
-  approach rate limits). Default threshold is **8GB** (overridable via `RRD_ARCHIVE_THRESHOLD_GB`, leaving
-  headroom under GitHub's recommended 10GB).
+  approach rate limits). Default threshold is **1GB** (changed from 8GB on 2026-10-03, since GitHub recommends
+  under 1GB per repository with a 5GB soft limit; overridable via `RRD_ARCHIVE_THRESHOLD_GB`). If the average
+  growth rate since creation predicts reaching the threshold within 14 days, the **next shard is created
+  ahead of time** (the actual write switch still happens at the threshold).
 - **Rotation**: once the threshold is exceeded, a new private repository named `<prefix>-<n>` (e.g.
   `realdata-archive-2`) is auto-created via the GitHub API (`POST /orgs/{owner}/repos` or `/user/repos`),
   and all subsequent writes go there. The old shard is marked "sealed" and stays read-only (existing data
@@ -219,8 +232,17 @@ prepared in advance.
 - Verified on the dev machine: unit tests (`vault::tests`, `github::tests`) pass, and all existing
   `archive`/`store` tests still pass (the real GitHub API / repo creation has not yet been exercised;
   to be confirmed after deployment once a token is configured).
-- Not yet done: an actual end-to-end rotation at the 8GB threshold (unlikely to be reached for a while
-  given current data volume).
+- Not yet done: an actual end-to-end rotation at the threshold (the current shard is ~0.9MB, so this is far
+  off; see the manual verification procedure below, using throwaway shards).
+
+#### Manual rotation check procedure (2026-10-14, English)
+
+1. Start a **separate verification instance** with `RRD_ARCHIVE_THRESHOLD_GB` set tiny (e.g. `0.000001`) and
+   its own throwaway private `RRD_ARCHIVE_REPO` / `RRD_CATALOG_REPO` (never write to the production shard).
+2. Save a few datasets via GraphQL `saveDataset`; within one 10-minute capacity check the new shard
+   `<prefix>-2` should be auto-created and writes should switch, visible in the log and `catalog.json`.
+3. Confirm the old shard is still readable (dataset list, version history).
+4. Delete the throwaway repositories afterwards.
 
 ## 毎朝の自動収集(aruaru-search)の試験結果(2026-09-26)
 

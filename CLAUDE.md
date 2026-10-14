@@ -67,7 +67,7 @@ cargo run -p rrd-server        # http://127.0.0.1:4701/
      確認した。確認後は本番コード(7時ゲートあり)に戻して再ビルド・再起動済み(GitHubへの
      push・コミットはしていない、一時的なローカル検証のみ)。今日の実際の7:00 JST収集は
      通常どおり本番コードで別途実行される。
-  2. 現在のシャード(`realdata-archive`)の容量がしきい値8GBに近づいて、実際に自動引っ越し
+  2. 現在のシャード(`realdata-archive`)の容量がしきい値(既定1GB、2026-10-03変更)に近づいて、実際に自動引っ越し
      (新しいリポジトリの自動作成)が起きる場面は、まだ実地で確認できていない(容量的にまだ遠い)。
      容量が近づいてきたら、VPS のログ(`realdata.pro: 保管庫 … が上限に近づきました`)を確認する。
   3. 日本語検索元が Bing・Brave・Yahoo! JAPAN の3つのみで心許ない点は、2026-09-28〜29に
@@ -122,7 +122,16 @@ cargo run -p rrd-server        # http://127.0.0.1:4701/
 - **地図データ(OpenStreetMap)は夜(日本時間1〜6時)に先取得**して `osm/` に保存し(`osm::refresh`、1日30件、90日で一巡)、世界リサーチでは保存済みを使う。数の多い分類をその場で問い合わせると時間切れになるため。
 - `RRD_CRAWL_FORCE=1` を付けて起動すると、今日のぶんがあっても、起動後に1回だけ毎朝の自動収集を実行する(動作確認用)。動作確認のあとは外すこと。
 
-## 保管庫の複数リポジトリ自動引っ越し(2026-09-28)
+## 保管庫の複数リポジトリ自動引っ越し(2026-09-28、2026-10-14追記)
+
+**お引越しの確認手順(2026-10-14)**: 本番の現シャードは約0.9MBで、実際のしきい値到達はまだ先。実地の通し確認は、
+本番とは別の使い捨て非公開リポジトリと極小しきい値(`RRD_ARCHIVE_THRESHOLD_GB=0.000001`)の検証用インスタンスで行う
+(手順は [PORTING.md](PORTING.md)「お引越しの手動確認手順」)。本番のシャードには書かない。
+
+**English summary**: Archive rotation ("hikkoshi") creates a new private shard when the current one nears the threshold
+(default 1GB, or predicted within 14 days) and switches writes; old shards stay read-only. Enabled by `RRD_CATALOG_REPO`.
+Production shard is ~0.9MB, so rotation has not yet occurred; verify end-to-end with a throwaway shard and a tiny
+threshold, never the production shard (see PORTING.md).
 
 GitHubの1リポジトリの容量上限に備え、`RRD_CATALOG_REPO`(索引リポジトリ)を設定すると、現在のシャード
 (`RRD_ARCHIVE_REPO`)の容量が既定1GB(2026-10-03に8GBから変更。GitHub推奨は1GB未満・ソフト上限5GB。`RRD_ARCHIVE_THRESHOLD_GB`で変更可)に達する見込みになったとき(増加ペースから14日以内と予測した時点で次のシャードを先行作成、切り替えはしきい値到達時)、GitHub API

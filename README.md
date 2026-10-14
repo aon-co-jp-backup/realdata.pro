@@ -78,6 +78,12 @@ mutation { loadCsv(name: "sales", csv: "city,sales\nTokyo,100\nOsaka,80\n") { ro
 query { regression(name: "sales", target: "sales", features: ["qty", "ad_cost"]) { intercept coefficients rSquared device } }
 ```
 
+## 保管庫のお引越し(自動)
+
+収集データは GitHub の非公開リポジトリ(保管庫)に保存します。1リポジトリが約1GBに近づく(増加ペースから14日以内と予測した)と、
+新しい非公開リポジトリ(`realdata-archive-2` …)を自動で作り、書き込み先を切り替えます。古いデータは移動せず、読み取り専用のまま残ります。
+索引リポジトリ `RRD_CATALOG_REPO` を設定すると有効になります(未設定なら単一リポジトリ)。詳細は [PORTING.md](PORTING.md)。
+
 ## 構成
 
 ```
@@ -98,6 +104,11 @@ scripts/        fetch-deps(.deps/ への固定取得)
 SAS Institute), built on the aon-co-jp ecosystem: a dependency-free columnar engine, open-cuda GEMM for
 regression, and a RPoem-based server exposing a single GraphQL endpoint plus a no-code web UI. aruaru-db
 persistence, aruaru-llm explanations and open-directx rendering are next. See [PORTING.md](PORTING.md).
+
+**Automatic archive rotation ("hikkoshi").** Collected data is stored in private GitHub repositories. When the current
+shard nears ~1GB (or is predicted to within 14 days), a new private repository (`realdata-archive-2`, …) is created
+automatically and writes switch to it; old shards stay read-only. Enabled by setting the catalog repository
+`RRD_CATALOG_REPO`; otherwise a single repository is used. Details in [PORTING.md](PORTING.md).
 
 ## ライセンス
 
