@@ -119,6 +119,12 @@ button:disabled{opacity:.5;cursor:progress}
     <div id="invOut"><p class="meta">読み込み中…</p></div>
   </section>
 
+  <section id="crawl">
+    <h2>🔎 検索と毎朝の自動収集の状態</h2>
+    <p class="meta">無料の自前検索(aruaru-search)の検索元の状態と、毎朝7時(日本時間)の自動収集の結果、本日使った検索の数です。拒否された検索元は、しばらく休んでから自動で戻ります。</p>
+    <div id="crawlOut"><p class="meta">読み込み中…</p></div>
+  </section>
+
   <section id="tune">
     <h2>⚙ 性能の自動検査(CPU・GPU・NPU)</h2>
     <p class="meta">この機器の CPU(AVX-512 / AVX2 など)と GPU を実際に動かして測り、処理の種類と大きさごとに一番速い経路を自動で選びます。GPU の結果が CPU と一致しない場合は、速くても使いません。その日の最初に起動したとき、毎朝7時(日本時間)、そして構成が変わったときに、自動で検査し直します。</p>
@@ -839,6 +845,28 @@ function addTuneButtons(out, d) {
   }
 }
 loadTune();
+async function loadCrawl() {
+  const out = $('crawlOut');
+  try {
+    const c = (await gql(`{ crawlStatus { running lastName lastFinishedUnix lastOk lastFailed lastSavedTo lastError searchesToday searchesLimit searchState engines { id ok cooldownSecs error } } }`)).crawlStatus;
+    out.innerHTML = '';
+    const stateJa = { ok: '良好', degraded: '一部のみ使用可', down: '使えません', unavailable: '接続できません' }[c.searchState] || c.searchState;
+    const last = c.lastFinishedUnix ? new Date(c.lastFinishedUnix * 1000).toLocaleString('ja-JP') : null;
+    const kpis = el('div', { className: 'kpis' });
+    const kpi = (label, value) => { const d = el('div', { className: 'kpi' }); d.append(el('span', { className: 'meta' }, label), el('b', {}, value)); return d; };
+    kpis.append(kpi('無料検索', stateJa), kpi('本日の検索', `${c.searchesToday} / ${c.searchesLimit}件`),
+      kpi('直近の自動収集', c.running ? '実行中…' : last ? `${c.lastOk}か所成功・${c.lastFailed}か所失敗` : '(起動後はまだ実行していません)'));
+    out.append(kpis);
+    if (last) out.append(el('p', { className: 'meta' }, `直近の完了: ${last} ・ データセット ${c.lastName || '—'} ・ 保存先 ${c.lastSavedTo || '—'}`));
+    if (c.lastError) out.append(el('p', { className: 'warn' }, '直近の自動収集が失敗しました: ' + c.lastError));
+    if (c.engines.length) {
+      const ul = el('ul', { className: 'meta' });
+      for (const e of c.engines) ul.append(el('li', {}, `${e.ok ? '✅' : '⏸'} ${e.id}` + (e.ok ? '' : `(${e.cooldownSecs > 0 ? Math.ceil(e.cooldownSecs / 60) + '分ほど休止中' : '使えません'}${e.error ? ': ' + e.error : ''})`)));
+      out.append(ul);
+    }
+  } catch (e) { out.innerHTML = ''; out.append(el('p', { className: 'err' }, e.message)); }
+}
+loadCrawl(); setInterval(loadCrawl, 60000);
 
 // ───── 版の記録(aruaru-db)─────
 async function refreshVersions() {

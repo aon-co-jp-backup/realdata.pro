@@ -62,6 +62,27 @@ const KEEP_DAYS: usize = 7;
 /// 検索が使えないエラーがこの回数「続けて」起きたら、その日の収集を打ち切る
 const MAX_UNAVAILABLE_STREAK: usize = 4;
 
+/// 直近の自動収集の結果(画面に出す)
+#[derive(Clone, Default)]
+pub struct LastRun {
+    pub finished_unix: u64,
+    pub name: String,
+    pub ok: usize,
+    pub failed: usize,
+    pub saved_to: String,
+    pub error: String,
+}
+
+static LAST_RUN: std::sync::Mutex<Option<LastRun>> = std::sync::Mutex::new(None);
+
+pub fn last_run() -> Option<LastRun> {
+    LAST_RUN.lock().ok().and_then(|g| g.clone())
+}
+
+pub fn is_running() -> bool {
+    RUNNING.load(Ordering::SeqCst)
+}
+
 static RUNNING: AtomicBool = AtomicBool::new(false);
 /// 最後に保管庫への移動を試みた日(通算日)
 static LAST_ARCHIVE_DAY: AtomicU64 = AtomicU64::new(0);
@@ -183,6 +204,13 @@ pub async fn run_daily(st: Arc<AppState>) {
     LAST_TRY_DAY.store(day_index(crate::market::now_unix()), Ordering::SeqCst);
     if let Err(e) = collect(&st).await {
         eprintln!("realdata.pro: 毎朝の自動収集に失敗: {e:#}");
+        if let Ok(mut g) = LAST_RUN.lock() {
+            *g = Some(LastRun {
+                finished_unix: crate::market::now_unix(),
+                error: format!("{e:#}").chars().take(200).collect(),
+                ..Default::default()
+            });
+        }
     }
     RUNNING.store(false, Ordering::SeqCst);
 }
@@ -315,6 +343,20 @@ async fn collect(st: &Arc<AppState>) -> anyhow::Result<()> {
         let d = dir(st);
         std::fs::create_dir_all(&d)?;
         std::fs::write(d.join(format!("{name}.csv")), &csv)?;
+    }
+    if let Ok(mut g) = LAST_RUN.lock() {
+        *g = Some(LastRun {
+            finished_unix: crate::market::now_unix(),
+            name: name.clone(),
+            ok,
+            failed,
+            saved_to: if saved_remote {
+                "GitHub".into()
+            } else {
+                "手元(後で送り直し)".into()
+            },
+            error: String::new(),
+        });
     }
     eprintln!("realdata.pro: 毎朝の自動収集を保存しました({name}、{ok}か所成功・{failed}か所失敗、保存先 {})", if saved_remote { "GitHub" } else { "手元(後で送り直し)" });
     Ok(())

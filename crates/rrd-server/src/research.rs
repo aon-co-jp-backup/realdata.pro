@@ -76,6 +76,14 @@ pub const MAX_SEARCHES_PER_DAY: u64 = 3_000;
 /// (日本時間の通算日, その日に使った検索の数)
 static DAILY_SEARCHES: std::sync::Mutex<(u64, u64)> = std::sync::Mutex::new((0, 0));
 
+/// 本日使った検索の数(日本時間の日付が変わると0)。画面の表示用。
+pub fn searches_today() -> u64 {
+    let day = (crate::market::now_unix() + 9 * 3600) / 86_400;
+    DAILY_SEARCHES
+        .lock()
+        .map_or(0, |g| if g.0 == day { g.1 } else { 0 })
+}
+
 /// 検索を `n` 回ぶん使う。1日の上限を超えるなら、何も使わずにエラーを返す。
 fn take_daily_searches(n: u64) -> Result<()> {
     let day = (crate::market::now_unix() + 9 * 3600) / 86_400;

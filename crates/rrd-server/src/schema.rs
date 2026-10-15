@@ -629,6 +629,57 @@ impl QueryRoot {
         })
     }
 
+    /// 毎朝の自動収集と、無料検索(aruaru-search)の状態。画面の「検索と自動収集の状態」用。
+    async fn crawl_status(&self, ctx: &Context<'_>) -> CrawlStatusView {
+        let st = state(ctx);
+        let base =
+            std::env::var("RRD_SEARCH_URL").unwrap_or_else(|_| "http://127.0.0.1:4610".into());
+        let mut engines = Vec::new();
+        let mut search_state = "unavailable".to_string();
+        if let Ok(r) = st
+            .http
+            .get(format!("{}/v1/health", base.trim_end_matches('/')))
+            .timeout(std::time::Duration::from_secs(3))
+            .send()
+            .await
+        {
+            if let Ok(j) = r.json::<serde_json::Value>().await {
+                search_state = j["status"].as_str().unwrap_or("unavailable").to_string();
+                for e in j["engines"].as_array().cloned().unwrap_or_default() {
+                    engines.push(SearchEngineView {
+                        id: e["id"].as_str().unwrap_or("").to_string(),
+                        ok: e["ok"].as_bool().unwrap_or(false),
+                        cooldown_secs: e["cooldown_secs"].as_i64().unwrap_or(0),
+                        error: e["last_error"].as_str().map(String::from),
+                    });
+                }
+            }
+        }
+        let last = crate::crawl::last_run();
+        CrawlStatusView {
+            running: crate::crawl::is_running(),
+            last_name: last
+                .as_ref()
+                .map(|l| l.name.clone())
+                .filter(|s| !s.is_empty()),
+            last_finished_unix: last.as_ref().map(|l| l.finished_unix as i64),
+            last_ok: last.as_ref().map(|l| l.ok as i64).unwrap_or(0),
+            last_failed: last.as_ref().map(|l| l.failed as i64).unwrap_or(0),
+            last_saved_to: last
+                .as_ref()
+                .map(|l| l.saved_to.clone())
+                .filter(|s| !s.is_empty()),
+            last_error: last
+                .as_ref()
+                .map(|l| l.error.clone())
+                .filter(|s| !s.is_empty()),
+            searches_today: crate::research::searches_today() as i64,
+            searches_limit: crate::research::MAX_SEARCHES_PER_DAY as i64,
+            search_state,
+            engines,
+        }
+    }
+
     /// 知りたい情報の一覧
     async fn research_topics(&self) -> Vec<TopicView> {
         crate::places::TOPICS
@@ -773,6 +824,30 @@ pub struct PlaceInput {
     pub country: String,
     pub region: Option<String>,
     pub city: Option<String>,
+}
+
+#[derive(SimpleObject)]
+pub struct SearchEngineView {
+    pub id: String,
+    pub ok: bool,
+    pub cooldown_secs: i64,
+    pub error: Option<String>,
+}
+
+#[derive(SimpleObject)]
+pub struct CrawlStatusView {
+    pub running: bool,
+    pub last_name: Option<String>,
+    pub last_finished_unix: Option<i64>,
+    pub last_ok: i64,
+    pub last_failed: i64,
+    pub last_saved_to: Option<String>,
+    pub last_error: Option<String>,
+    pub searches_today: i64,
+    pub searches_limit: i64,
+    /// ok / degraded / down / unavailable
+    pub search_state: String,
+    pub engines: Vec<SearchEngineView>,
 }
 
 #[derive(SimpleObject)]
