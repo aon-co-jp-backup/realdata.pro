@@ -59,6 +59,9 @@ const CRAWL_PACE_MS: u64 = 12_000;
 /// 保管庫を使わないときに、手元へ残す日数
 const KEEP_DAYS: usize = 7;
 
+/// 検索が使えないエラーがこの回数「続けて」起きたら、その日の収集を打ち切る
+const MAX_UNAVAILABLE_STREAK: usize = 4;
+
 static RUNNING: AtomicBool = AtomicBool::new(false);
 /// 最後に保管庫への移動を試みた日(通算日)
 static LAST_ARCHIVE_DAY: AtomicU64 = AtomicU64::new(0);
@@ -214,6 +217,7 @@ async fn collect(st: &Arc<AppState>) -> anyhow::Result<()> {
     }
     let mut merged: Option<String> = None;
     let (mut ok, mut failed) = (0usize, 0usize);
+    let mut unavailable_streak = 0usize;
     eprintln!(
         "realdata.pro: 毎朝の自動収集を開始します(場所 {} か所、検索の組 {} 件、無料検索 {})",
         places.len(),
@@ -249,6 +253,7 @@ async fn collect(st: &Arc<AppState>) -> anyhow::Result<()> {
         match research::run(&st.http, &st.llm_base, &regions, opt).await {
             Ok(out) => {
                 ok += 1;
+                unavailable_streak = 0;
                 eprintln!(
                     "realdata.pro: 自動収集 {label}: {n_topics}件の検索で {} 件を収集",
                     out.items.len()
@@ -272,8 +277,16 @@ async fn collect(st: &Arc<AppState>) -> anyhow::Result<()> {
                     "realdata.pro: 毎朝の自動収集(1か所)に失敗 {label}({n_topics}件の検索): {}",
                     msg.chars().take(600).collect::<String>()
                 );
+                // 検索が使えない(枠切れ・検索元に拒否)ことを示すエラーが「続けて」起きたときだけ打ち切る。
+                // 1か所だけ(検索元が一時的に休止中など)で打ち切ると、9/29 のように23か所中2か所で止まる
                 if msg.contains("quota") || msg.contains("free search") {
-                    break; // 検索が使えない(枠切れ・検索元に拒否)。残りの場所は明日にする
+                    unavailable_streak += 1;
+                    if unavailable_streak >= MAX_UNAVAILABLE_STREAK {
+                        eprintln!("realdata.pro: 検索が{MAX_UNAVAILABLE_STREAK}か所続けて使えなかったため、残りは翌日にします");
+                        break;
+                    }
+                } else {
+                    unavailable_streak = 0;
                 }
             }
         }
