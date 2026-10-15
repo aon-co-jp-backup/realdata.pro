@@ -361,7 +361,7 @@ pub async fn preload(needs: &[(&Target, &str)]) {
         if let Ok(got) = crate::archive::read_many(&r, "HEAD", &ps).await {
             if let Ok(mut m) = mem().write() {
                 for (p, bytes) in got {
-                    if let Some(s) = bytes.and_then(|b| serde_json::from_slice::<Stored>(&b).ok()) {
+                    if let Some(s) = bytes.and_then(|b| sonic_rs::from_slice::<Stored>(&b).ok()) {
                         m.insert(p, (s.fetched_unix, s.places));
                     }
                 }
@@ -450,7 +450,7 @@ pub async fn refresh(
     let prefs = regions.top_level("JP").items;
     let manifest: HashMap<String, u64> = crate::vault::read_first(repo, MANIFEST)
         .await
-        .and_then(|b| serde_json::from_slice(&b).ok())
+        .and_then(|b| sonic_rs::from_slice(&b).ok())
         .unwrap_or_default();
     let mut manifest = manifest;
     // 場所の表示名(`places::resolve` の label)で数える
@@ -633,7 +633,7 @@ mod tests {
 
     #[test]
     fn parses_elements_with_website_or_osm_link() {
-        let j: Json = serde_json::from_str(
+        let j: Json = sonic_rs::from_str(
             r#"{"elements":[
               {"type":"node","id":1,"tags":{"name":"A温泉","natural":"hot_spring","website":"https://a.example/"}},
               {"type":"way","id":2,"tags":{"name:ja":"B神社","amenity":"place_of_worship","addr:city":"甲府市","website":"javascript:x"}},

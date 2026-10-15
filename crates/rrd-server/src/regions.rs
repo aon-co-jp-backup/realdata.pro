@@ -275,7 +275,7 @@ pub fn parse(
     };
 
     let ja: BTreeMap<String, Vec<String>> =
-        serde_json::from_slice(ja_json).context("日本の市区町村データを読めません")?;
+        sonic_rs::from_slice(ja_json).context("日本の市区町村データを読めません")?;
     let japan: Vec<(String, Vec<String>)> = PREFECTURES
         .iter()
         .filter_map(|p| ja.get(*p).map(|c| (p.to_string(), c.clone())))

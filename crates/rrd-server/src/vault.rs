@@ -136,7 +136,7 @@ pub fn get() -> Option<&'static Vault> {
 async fn load_catalog(repo: &str) -> Result<CatalogFile> {
     let got = archive::read_many(repo, "HEAD", &[CATALOG_FILE.to_string()]).await?;
     match got.into_iter().next().and_then(|(_, b)| b) {
-        Some(bytes) => Ok(serde_json::from_slice(&bytes).unwrap_or_default()),
+        Some(bytes) => Ok(sonic_rs::from_slice(&bytes).unwrap_or_default()),
         None => Ok(CatalogFile::default()),
     }
 }
@@ -418,7 +418,7 @@ mod tests {
             )]),
         };
         let json = serde_json::to_vec(&c).unwrap();
-        let back: CatalogFile = serde_json::from_slice(&json).unwrap();
+        let back: CatalogFile = sonic_rs::from_slice(&json).unwrap();
         assert_eq!(back.shards.len(), 1);
         assert_eq!(back.index.len(), 1);
     }

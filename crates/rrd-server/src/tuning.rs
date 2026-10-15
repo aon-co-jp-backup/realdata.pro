@@ -50,7 +50,7 @@ fn profile_path(data_dir: &Path) -> PathBuf {
 }
 
 pub fn load_profile(data_dir: &Path) -> Option<Profile> {
-    serde_json::from_slice(&std::fs::read(profile_path(data_dir)).ok()?).ok()
+    sonic_rs::from_slice(&std::fs::read(profile_path(data_dir)).ok()?).ok()
 }
 
 fn save_profile(data_dir: &Path, p: &Profile) {
