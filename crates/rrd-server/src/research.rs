@@ -217,7 +217,7 @@ pub fn extract_json(text: &str) -> Option<Json> {
     if end <= start {
         return None;
     }
-    serde_json::from_str(&text[start..=end]).ok()
+    sonic_rs::from_str(&text[start..=end]).ok()
 }
 
 async fn search_raw(http: &reqwest::Client, base: &str, body: Json) -> Result<Vec<Json>> {

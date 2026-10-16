@@ -64,7 +64,7 @@ pub fn file_path(data_dir: &Path) -> PathBuf {
 pub fn load(data_dir: &Path) -> DepositSnapshot {
     std::fs::read_to_string(file_path(data_dir))
         .ok()
-        .and_then(|s| serde_json::from_str(&s).ok())
+        .and_then(|s| sonic_rs::from_str(&s).ok())
         .unwrap_or_default()
 }
 
