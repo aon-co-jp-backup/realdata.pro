@@ -90,6 +90,7 @@ pub fn app(schema: RrdSchema, max_body: usize) -> Route {
                 async move { graphql(schema, req, max_body).await }
             })),
         )
+        .docs_auto("/api", "realdata.pro", env!("CARGO_PKG_VERSION"))
         .with_compression()
 }
 
