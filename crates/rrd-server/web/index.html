@@ -77,8 +77,8 @@ button:disabled{opacity:.5;cursor:progress}
     <h2>🌏 世界情勢に相談し、学ぶ <span class="badge">NEW</span></h2>
     <p class="meta">世界中のニュースを毎日集めたデータに基づく受け答え、メイドカフェでの英会話研修、メイドによるWEB・スマホアプリ開発教室を、このサイトにまとめました。<br><span lang="en">World-news Q&amp;A grounded in daily-collected global news, English conversation training in a maid café, and web / smartphone-app programming lessons — all in one place.</span></p>
     <div class="grid">
-      <div class="card"><h4>🗞️ 世界情勢Q&amp;A・英会話(メイドカフェ英会話研修)</h4><p class="meta">World news Q&amp;A and English conversation training</p><p><a href="/english/">開く / Open</a></p></div>
-      <div class="card"><h4>💻 WEBプログラミング・スマホアプリ開発教室</h4><p class="meta">Web programming &amp; mobile-app development school</p><p><a href="/school/">開く / Open</a></p></div>
+      <div class="card"><h4>🗞️ 世界情勢Q&amp;A・英会話(メイドカフェ英会話研修)</h4><p class="meta">World news Q&amp;A and English conversation training</p><p><a id="link-english" href="/english/">開く / Open</a></p></div>
+      <div class="card"><h4>💻 WEBプログラミング・スマホアプリ開発教室</h4><p class="meta">Web programming &amp; mobile-app development school</p><p><a id="link-school" href="/school/">開く / Open</a></p></div>
     </div>
     <p class="meta">旧サイト easy-web.tokyo/open-english と /maid-cafe-english は、こちらへ引っ越しました。<span lang="en"> The former open-english and maid-cafe-english sites have moved here.</span></p>
   </section>
@@ -296,10 +296,14 @@ button:disabled{opacity:.5;cursor:progress}
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
+// このページがドメイン直下(realdata.pro/)でも、サブパス(maid-cafe.tokyo/data/)でも動くよう、APIは今のパス基準の相対で呼ぶ。
+const BASE = location.pathname.replace(/[^/]*$/, '');
+// maid-cafe.tokyo では英会話がドメイン直下にある(旧 realdata.pro/english/ の引っ越し先)。
+if (/(^|\.)maid-cafe\.tokyo$/.test(location.hostname)) { const a = document.getElementById('link-english'); if (a) a.href = '/'; }
 let current = null; // 選択中データセットの情報
 
 async function gql(query, variables = {}) {
-  const r = await fetch('/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query, variables }) });
+  const r = await fetch(BASE + 'graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query, variables }) });
   const j = await r.json();
   if (j.errors && j.errors.length) throw new Error(j.errors.map(e => e.message).join('\n'));
   return j.data;
