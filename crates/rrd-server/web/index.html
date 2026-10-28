@@ -307,7 +307,12 @@ const $ = (id) => document.getElementById(id);
 // このページがドメイン直下(realdata.pro/)でも、サブパス(maid-cafe.tokyo/data/)でも動くよう、APIは今のパス基準の相対で呼ぶ。
 const BASE = location.pathname.replace(/[^/]*$/, '');
 // maid-cafe.tokyo では英会話がドメイン直下にある(旧 realdata.pro/english/ の引っ越し先)。
-if (/(^|\.)maid-cafe\.tokyo$/.test(location.hostname)) { const a = document.getElementById('link-english'); if (a) a.href = '/'; }
+if (/(^|\.)maid-cafe\.tokyo$/.test(location.hostname)) {
+  const a = document.getElementById('link-english'); if (a) a.href = '/';
+  // maid-cafe.tokyo の中の画面なので、見出し・タイトルも maid-cafe.tokyo の名前にする(実機で「realdata.pro」と出ていた)
+  document.title = 'maid-cafe.tokyo データ分析 / Data analysis';
+  const h = document.querySelector('h1'); if (h) h.textContent = 'maid-cafe.tokyo データ分析 / Data analysis';
+}
 let current = null; // 選択中データセットの情報
 
 async function gql(query, variables = {}) {
