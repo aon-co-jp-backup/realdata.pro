@@ -3908,6 +3908,7 @@ dependencies = [
  "rrd-core",
  "rrd-render",
  "rrd-tune",
+ "rust-json",
  "scraper",
  "serde",
  "serde_json",
@@ -3952,6 +3953,15 @@ checksum = "091dca2e1d6fd3098417b5ec88e77e80d1ba5945750943419dc976858082c296"
 dependencies = [
  "rustc-hash 1.1.0",
  "spirv",
+]
+
+[[package]]
+name = "rust-json"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
