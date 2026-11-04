@@ -369,3 +369,7 @@ Reading into `serde_json::Value` gives almost no speed-up even with SIMD (188 ms
 - **Исключения (интерфейсы, форму которых определяет чужой стандарт, а не наш собственный API)**: ACME, обратные вызовы OAuth/OIDC, вебхуки сторонних сервисов (например, GitHub), проверки работоспособности, раздача статических файлов, OTLP и тому подобное. Такие интерфейсы принимают обычный HTTP, как того требует соответствующий стандарт.
 - Эталонные реализации: `RPoem` (`open_runo.admin.v1.Admin`) и `open-easy-web` (`server/src/connect.rs`, `proto/open_easy_web/admin/v1/admin.proto`).
 - Примечание: соответствует ли код конкретного репозитория этой политике, зависит от самого репозитория. Данный раздел лишь фиксирует политику и не означает, что код уже изменён.
+
+## 2026-11-04 依存更新 / Dependency update
+- base64 0.22→0.23（rrd-server）。ビルド・テスト成功。`.deps/`配下の他リポジトリ由来の遅れと、修正版の無いrsa（RUSTSEC-2023-0071）は各リポジトリ側の対応待ち。
+- base64 0.22→0.23 (rrd-server). Build and tests pass. Gaps inside `.deps/` and rsa (RUSTSEC-2023-0071, no fix) belong to the upstream repos.
