@@ -638,12 +638,21 @@ impl QueryRoot {
         let mut search_state = "unavailable".to_string();
         if let Ok(r) = st
             .http
-            .get(format!("{}/v1/health", base.trim_end_matches('/')))
+            .post(format!(
+                "{}/aruaru_search.v1.Search/Health",
+                base.trim_end_matches('/')
+            ))
+            .header("content-type", "application/json")
+            .body("{}")
             .timeout(std::time::Duration::from_secs(3))
             .send()
             .await
         {
-            if let Ok(j) = r.json::<serde_json::Value>().await {
+            let body = r.text().await.unwrap_or_default();
+            if let Ok(j) = rust_json::secure::from_str_secure::<serde_json::Value>(
+                &body,
+                &rust_json::secure::Limits::default(),
+            ) {
                 search_state = j["status"].as_str().unwrap_or("unavailable").to_string();
                 for e in j["engines"].as_array().cloned().unwrap_or_default() {
                     engines.push(SearchEngineView {
