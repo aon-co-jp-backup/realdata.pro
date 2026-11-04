@@ -291,7 +291,7 @@ pub async fn collect(http: &reqwest::Client, llm: &str) -> DepositSnapshot {
 
 async fn search(http: &reqwest::Client, llm: &str, body: Json) -> Result<Vec<Json>> {
     let resp = http
-        .post(format!("{}/v1/search/raw", llm.trim_end_matches('/')))
+        .post(format!("{}/aruaru_llm.v1.Llm/SearchRaw", llm.trim_end_matches('/')))
         .json(&body)
         .timeout(Duration::from_secs(40))
         .send()

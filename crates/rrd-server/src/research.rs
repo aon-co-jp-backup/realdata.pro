@@ -222,7 +222,7 @@ pub fn extract_json(text: &str) -> Option<Json> {
 
 async fn search_raw(http: &reqwest::Client, base: &str, body: Json) -> Result<Vec<Json>> {
     let resp = http
-        .post(format!("{}/v1/search/raw", base.trim_end_matches('/')))
+        .post(format!("{}/aruaru_llm.v1.Llm/SearchRaw", base.trim_end_matches('/')))
         .json(&body)
         .timeout(Duration::from_secs(40))
         .send()
@@ -245,12 +245,10 @@ async fn search_raw(http: &reqwest::Client, base: &str, body: Json) -> Result<Ve
 }
 
 async fn country_news(http: &reqwest::Client, base: &str, name: &str) -> Result<Vec<Json>> {
-    let url = reqwest::Url::parse_with_params(
-        &format!("{}/v1/news/for", base.trim_end_matches('/')),
-        &[("country", name)],
-    )?;
+    let url = format!("{}/aruaru_llm.v1.Llm/NewsFor", base.trim_end_matches('/'));
     let j: Json = http
-        .get(url)
+        .post(url)
+        .json(&serde_json::json!({"country": name}))
         .timeout(Duration::from_secs(40))
         .send()
         .await
