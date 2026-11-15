@@ -462,3 +462,8 @@ Reading into `serde_json::Value` gives almost no speed-up even with SIMD (188 ms
 
 - 日本語: 使い捨てリポジトリ(しきい値 約1KB、本番とは別ポート・別データ)で実地確認した。容量超過を検知して `…-archive-2` を自動作成し書き込み先を切替、旧シャードは sealed(読み込み専用)になり、さらに `…-archive-3` へも連鎖して引っ越した。`catalog.json` の索引は各ファイルを正しいシャードへ指す。23か所の毎朝収集も途切れず保存された。検証用の実体(systemd 一時ユニット・/tmp のトークン入りファイル)は削除、使い捨てリポジトリ3件はアーカイブ済み(削除は所有者が行う)。
 - English: Verified live with throwaway repos (threshold ~1 KB, separate port and data). On exceeding the threshold the server auto-created `…-archive-2`, switched writes, sealed the old shard read-only, and chained again to `…-archive-3`. The `catalog.json` index points each file to the right shard, and the 23-place daily crawl was saved without interruption. Test unit and token-bearing files were removed; the three throwaway repos are archived (deletion is left to the owner).
+
+## 別アカウントでの再開(2026-11-15)/ Resuming on another account
+
+- 日本語: 再開用メッセージ(リポジトリ名・確認済み事項・未了・落とし穴)は[`CLAUDE.md`](CLAUDE.md)の「🛑 再開用メッセージ(別アカウントで再開用、2026-11-15更新)」に日英で書いた。要点: 毎朝収集は23か所・600件の既定で正常(11/15は22か所成功・山形県のみ0件で失敗)、早期打ち切りは連続失敗時のみで問題なし、シャード自動お引越しは実地確認済み。未了は、使い捨てリポジトリ4件の削除(所有者)、「4層4重」の記録(構成の詳細待ち)、本番シャードが1GBに近づいたときの見守り。
+- English: The resume message (repositories, verified items, open items, pitfalls) is in [`CLAUDE.md`](CLAUDE.md), section "🛑 再開用メッセージ(別アカウントで再開用、2026-11-15更新)", in Japanese and English. Summary: the daily crawl works with the defaults (23 places, 600 searches; 11/15: 22 succeeded, only Yamagata failed with zero results), the early break only fires on consecutive failures, and shard rotation is verified live. Open: deleting the four throwaway repos (owner), documenting the "4-layer, 4-fold" setup (architecture details pending), and watching the production shard near 1 GB.
