@@ -664,7 +664,7 @@ impl QueryRoot {
                 }
             }
         }
-        let last = crate::crawl::last_run();
+        let last = crate::crawl::last_run_or_restored(&st);
         CrawlStatusView {
             running: crate::crawl::is_running(),
             last_name: last

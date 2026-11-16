@@ -79,6 +79,41 @@ pub fn last_run() -> Option<LastRun> {
     LAST_RUN.lock().ok().and_then(|g| g.clone())
 }
 
+/// 再起動直後など、メモリに直近の結果が無いとき、読み込み済みの保存分(daily_jp_YYYYMMDD)から復元する。
+/// 成功・失敗の数は保存されていないため 0 とし、保存先の表示でそのことを示す。
+pub fn last_run_or_restored(st: &AppState) -> Option<LastRun> {
+    if let Some(l) = last_run() {
+        return Some(l);
+    }
+    let m = st.datasets.read().ok()?;
+    let name = m.keys().filter(|k| is_daily_name(k)).max()?.clone();
+    let s = name.strip_prefix("daily_jp_")?;
+    let (y, mo, d): (i64, i64, i64) = (
+        s[0..4].parse().ok()?,
+        s[4..6].parse().ok()?,
+        s[6..8].parse().ok()?,
+    );
+    Some(LastRun {
+        finished_unix: jst_noon_unix(y, mo, d),
+        name,
+        ok: 0,
+        failed: 0,
+        saved_to: "GitHub(再起動前の記録。成功・失敗の数は不明)".into(),
+        error: String::new(),
+    })
+}
+
+/// 日本時間のその日の正午(おおよその目安)のUNIX時間
+fn jst_noon_unix(y: i64, mo: i64, d: i64) -> u64 {
+    let (yy, mm) = if mo <= 2 { (y - 1, mo + 9) } else { (y, mo - 3) };
+    let era = yy.div_euclid(400);
+    let yoe = yy - era * 400;
+    let doy = (153 * mm + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    (days * 86_400 + 12 * 3600 - 9 * 3600).max(0) as u64
+}
+
 pub fn is_running() -> bool {
     RUNNING.load(Ordering::SeqCst)
 }
@@ -434,6 +469,16 @@ fn prune(st: &Arc<AppState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn jst_noon_matches_known_dates() {
+        // 2026-11-16 12:00 JST = 2026-11-16 03:00 UTC = 1_794_798_000
+        assert_eq!(jst_noon_unix(1970, 1, 2), 86_400 + 3 * 3600);
+        let u = jst_noon_unix(2026, 10, 16);
+        assert_eq!(today(u), "daily_jp_20261016");
+        let u = jst_noon_unix(2024, 2, 29);
+        assert_eq!(today(u), "daily_jp_20240229");
+    }
 
     #[test]
     fn plan_uses_the_budget_and_covers_everything_eventually() {
