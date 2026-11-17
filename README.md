@@ -84,7 +84,7 @@ query { regression(name: "sales", target: "sales", features: ["qty", "ad_cost"])
 新しい非公開リポジトリ(`realdata-archive-2` …)を自動で作り、書き込み先を切り替えます。古いデータは移動せず、読み取り専用のまま残ります。
 索引リポジトリ `RRD_CATALOG_REPO` を設定すると有効になります(未設定なら単一リポジトリ)。詳細は [PORTING.md](PORTING.md)。2026-11-08に使い捨てリポジトリで実地確認済み(新シャード自動作成・旧シャードの読み取り専用化・索引の切替)。
 
-*English: when one vault repository nears ~1 GB the server auto-creates the next private repository and switches writes; old shards stay read-only. Verified live on 2026-11-08 with throwaway repositories. See [PORTING.md](PORTING.md). To resume work on another account, see the resume message in [CLAUDE.md](CLAUDE.md).*
+*English: when one vault repository nears ~1 GB the server auto-creates the next private repository and switches writes; old shards stay read-only. Verified live on 2026-11-08 with throwaway repositories. See [PORTING.md](PORTING.md). To resume work on another account (repository: `realdata.pro`), see the resume message in [CLAUDE.md](CLAUDE.md) (updated 2026-11-17).*
 
 ## 前面(open-web-server)・アプリサーバー(RPoem)との関係
 

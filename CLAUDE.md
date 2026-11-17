@@ -39,17 +39,17 @@ cargo run -p rrd-server        # http://127.0.0.1:4701/
 関連: `aruaru-search`(`F:\aruaru-search`、検索元・セレクタ自己修復)、`aruaru-llm`(`F:\aruaru-llm`)、`RPoem`、`open-web-server`。メタ索引は`F:\runo`。
 手元でcargoを使うときは`export PATH="$PATH:/c/Users/noruk/.cargo/bin"`(Git Bash)。VPSは`~/.cargo/bin/cargo`。秘密は`F:\`直下のtxt経由でscp、値は画面・コミットに出さない。
 
-**確認済み(2026-11-08〜15)**
-- 毎朝7:00 JSTの自動収集は既定(23か所・検索600件)で動いている。11/14=23か所成功、11/15=22か所成功・1か所失敗(山形県、検索語を含む結果が0件)。保存は`daily_jp_YYYYMMDD`としてGitHubへ。
+**確認済み(2026-11-08〜17)**
+- 毎朝7:00 JSTの自動収集は既定(23か所・検索600件)で動いている。11/14=23か所成功、11/15=22か所成功・1か所失敗(山形県、検索語を含む結果が0件)、11/16・11/17=ともに23か所成功・失敗0(山形県も正常)。保存は`daily_jp_YYYYMMDD`としてGitHubへ。
 - 早期打ち切り(`crawl.rs`の「quota」/「free search」判定)は、**連続`MAX_UNAVAILABLE_STREAK`回**のときだけ打ち切る設計で、9/29の「23か所中2か所」問題は解消済み。`explain.rs`の`all_quota_exceeded`は収集とは無関係(AI説明機能の文言)。
 - 保管庫のシャード自動お引越しは、使い捨てリポジトリ(しきい値約1KB、別ポート・別データ)で実地確認済み: `-archive-2`を自動作成して切替→旧シャードsealed→`-3`へ連鎖、`catalog.json`の索引も正しい。
 - aruaru-searchの検索元: excite追加(日本語4つ)、セレクタ自己修復+3回連続の断念で自動無効化+探りによる自動再有効化(Baiduは自動復帰を確認)。
 
 **未了・次にやること**
-1. 本番の実シャード(`realdata-archive`)が約1GBに近づいたときの実際の引っ越し(ログ`保管庫 … が上限に近づきました`)を見守る。
+1. 本番の実シャード(`realdata-archive`)が約1GBに近づいたときの実際の引っ越し(ログ`保管庫 … が上限に近づきました`)を見守る。2026-11-17時点で約4.4MBで、まだ遠い(対応は当面不要)。
 2. 使い捨てのGitHubリポジトリ4件(`rrd-rotation-test-archive`・`-2`・`-3`・`rrd-rotation-test-catalog`)は**2026-11-17に削除済み**(対応不要)。
-3. 「4層4重」の記録は**2026-11-17に完了**(下の「open-web-server ⇔ RPoem の『4層4重』…」節)。残るのは、realdata.pro の日次保存に④独立監査ログ等を足すかの**設計判断**(未実装)。
-4. 山形県のように「結果が0件」で失敗する県が繰り返すなら、検索語・除外条件を見直す。
+3. 「4層4重」の記録は**2026-11-17に完了**(下の「open-web-server ⇔ RPoem の『4層4重』…」節)。残るのは、realdata.pro の日次保存に④独立監査ログ(保存名・サイズ・SHA-256・時刻を追記専用ファイルへ)等を足すかの**設計判断**(未実装)。**ユーザーに「`rrd-server`へ実装して本番反映してよいか」「①〜③(PostgreSQL・Ledger経由のaruaru-db・マルチリージョン)へどこまで広げるか」を確認してから着手する**(返事は未受領)。
+4. 山形県の失敗は11/15の1回のみで、11/16以降は正常。繰り返すなら検索語・除外条件を見直す。11/16・11/17の「地図データを先に取得して保存」が0件(以前は28件)だった原因は未確認(取得済みで不要だっただけの可能性が高い)。
 5. 毎朝の収集で、場所が23か所すべてに進むかを引き続き確認(失敗は`journalctl -u realdata-pro`)。
 
 **落とし穴**: 7時ゲート(`main.rs`の`hour >= 7`)を外すテスト用の変更はコミットしない(本番のみ一時的に使い、戻し済み)。`cargo fmt --all`は禁止(パス依存の兄弟リポジトリまで整形される)、`cargo fmt -p <crate>`を使う。PowerShell 5.1で日本語ファイルを書かない。
@@ -58,17 +58,17 @@ cargo run -p rrd-server        # http://127.0.0.1:4701/
 
 Repositories to resume: `realdata.pro` (local `F:\realdata.pro`; VPS `/root/repository/realdata.pro` via `ssh conoha`; service `realdata-pro.service`). Related: `aruaru-search` (`F:\aruaru-search`: engines and selector self-repair), `aruaru-llm` (`F:\aruaru-llm`), `RPoem`, `open-web-server`. The meta index is `F:\runo`. Locally, use `export PATH="$PATH:/c/Users/noruk/.cargo/bin"` (Git Bash); on the VPS use `~/.cargo/bin/cargo`. Secrets go through txt files at the root of `F:\` and `scp`; never print values or commit them.
 
-**Verified (2026-11-08 to 15)**
-- The 7:00 JST daily crawl runs with the right defaults (23 places, 600 searches). 11/14: 23 places succeeded; 11/15: 22 succeeded, 1 failed (Yamagata: zero results containing the query terms). Saved to GitHub as `daily_jp_YYYYMMDD`.
+**Verified (2026-11-08 to 17)**
+- The 7:00 JST daily crawl runs with the right defaults (23 places, 600 searches). 11/14: 23 places succeeded; 11/15: 22 succeeded, 1 failed (Yamagata: zero results containing the query terms); 11/16 and 11/17: 23 succeeded, 0 failed (Yamagata fine). Saved to GitHub as `daily_jp_YYYYMMDD`.
 - The early break (`quota` / `free search` in `crawl.rs`) only fires after `MAX_UNAVAILABLE_STREAK` consecutive failures, so the 9/29 "2 of 23 places" problem is fixed. `all_quota_exceeded` in `explain.rs` is unrelated to the crawl (it is a message of the AI explain feature).
 - Automatic vault shard rotation was verified live with throwaway repos (threshold ~1 KB, separate port and data): `-archive-2` was created and writes switched, the old shard was sealed, it chained to `-3`, and the `catalog.json` index was correct.
 - aruaru-search: excite added (4 Japanese engines); selector self-repair, auto-disable after 3 consecutive give-ups, and auto re-enable by probing (Baidu recovered by itself).
 
 **Open / next**
-1. Watch the real shard (`realdata-archive`) approach ~1 GB and rotate for real (log line `保管庫 … が上限に近づきました`).
+1. Watch the real shard (`realdata-archive`) approach ~1 GB and rotate for real (log line `保管庫 … が上限に近づきました`). At 2026-11-17 it is about 4.4 MB, far from the limit (no action needed for now).
 2. Four throwaway GitHub repos (`rrd-rotation-test-archive`, `-2`, `-3`, `rrd-rotation-test-catalog`) were **deleted on 2026-11-17** (nothing left to do).
-3. Documenting the "4-layer, 4-fold" setup was **done on 2026-11-17** (section "open-web-server ⇔ RPoem …" below). What remains is the **design decision** whether to add a fourth-leg independent audit log etc. to realdata.pro's daily saves (not implemented).
-4. If prefectures like Yamagata keep failing with "zero results", revisit the query terms / exclusion filter.
+3. Documenting the "4-layer, 4-fold" setup was **done on 2026-11-17** (section "open-web-server ⇔ RPoem …" below). What remains is the **design decision** whether to add a fourth-leg independent audit log etc. to realdata.pro's daily saves (not implemented). **Ask the user first**: may the audit log be implemented in `rrd-server` and deployed to production, and how far to extend (1)–(3) (PostgreSQL, aruaru-db via the Ledger, multi-region)? (No answer received yet.)
+4. Yamagata failed only once (11/15) and was fine from 11/16. If it repeats, revisit the query terms / exclusion filter. Why the pre-fetched map data was 0 items on 11/16 and 11/17 (it was 28 before) is unconfirmed (probably already cached).
 5. Keep checking that every morning's crawl reaches all 23 places (failures: `journalctl -u realdata-pro`).
 
 **Pitfalls**: never commit the test-only change that bypasses the 7:00 gate (`hour >= 7` in `main.rs`; it was used on the VPS only and reverted). Do not run `cargo fmt --all` (it reformats path-dependent sibling repos); use `cargo fmt -p <crate>`. Do not write Japanese files from PowerShell 5.1.
