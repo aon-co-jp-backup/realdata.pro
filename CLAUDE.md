@@ -31,6 +31,52 @@ cargo run -p rrd-server        # http://127.0.0.1:4701/
 
 ## HANDOFF
 
+### 🛑 再開用メッセージ(別アカウントで再開用、2026-11-17更新) / Resume message for another account
+
+**日本語**
+
+再開するリポジトリ: `realdata.pro`(手元`F:\realdata.pro`、VPSは`ssh conoha`の`/root/repository/realdata.pro`、サービス`realdata-pro.service`)。
+関連: `aruaru-search`(`F:\aruaru-search`、検索元・セレクタ自己修復)、`aruaru-llm`(`F:\aruaru-llm`)、`RPoem`、`open-web-server`。メタ索引は`F:\runo`。
+手元でcargoを使うときは`export PATH="$PATH:/c/Users/noruk/.cargo/bin"`(Git Bash)。VPSは`~/.cargo/bin/cargo`。秘密は`F:\`直下のtxt経由でscp、値は画面・コミットに出さない。
+
+**確認済み(2026-11-08〜15)**
+- 毎朝7:00 JSTの自動収集は既定(23か所・検索600件)で動いている。11/14=23か所成功、11/15=22か所成功・1か所失敗(山形県、検索語を含む結果が0件)。保存は`daily_jp_YYYYMMDD`としてGitHubへ。
+- 早期打ち切り(`crawl.rs`の「quota」/「free search」判定)は、**連続`MAX_UNAVAILABLE_STREAK`回**のときだけ打ち切る設計で、9/29の「23か所中2か所」問題は解消済み。`explain.rs`の`all_quota_exceeded`は収集とは無関係(AI説明機能の文言)。
+- 保管庫のシャード自動お引越しは、使い捨てリポジトリ(しきい値約1KB、別ポート・別データ)で実地確認済み: `-archive-2`を自動作成して切替→旧シャードsealed→`-3`へ連鎖、`catalog.json`の索引も正しい。
+- aruaru-searchの検索元: excite追加(日本語4つ)、セレクタ自己修復+3回連続の断念で自動無効化+探りによる自動再有効化(Baiduは自動復帰を確認)。
+
+**未了・次にやること**
+1. 本番の実シャード(`realdata-archive`)が約1GBに近づいたときの実際の引っ越し(ログ`保管庫 … が上限に近づきました`)を見守る。
+2. 使い捨てのGitHubリポジトリ4件(`rrd-rotation-test-archive`・`-2`・`-3`・`rrd-rotation-test-catalog`)は**アーカイブ済みだが未削除**(トークンに削除権限が無い。所有者が削除)。
+3. 「open-web-server(Apache相当)⇔RPoem(Tomcat相当)の『4層4重』通信・DB連携」をREADME/CLAUDE/PORTINGに記録する依頼は、**構成の詳細をまだ受け取っていない**ため未記録。ユーザーに詳細を聞いてから書く(推測で埋めない)。方針の骨子は`F:\runo\CLAUDE.md`の「配備アーキテクチャ方針」に記録済み。
+4. 山形県のように「結果が0件」で失敗する県が繰り返すなら、検索語・除外条件を見直す。
+5. 毎朝の収集で、場所が23か所すべてに進むかを引き続き確認(失敗は`journalctl -u realdata-pro`)。
+
+**落とし穴**: 7時ゲート(`main.rs`の`hour >= 7`)を外すテスト用の変更はコミットしない(本番のみ一時的に使い、戻し済み)。`cargo fmt --all`は禁止(パス依存の兄弟リポジトリまで整形される)、`cargo fmt -p <crate>`を使う。PowerShell 5.1で日本語ファイルを書かない。
+
+**English**
+
+Repositories to resume: `realdata.pro` (local `F:\realdata.pro`; VPS `/root/repository/realdata.pro` via `ssh conoha`; service `realdata-pro.service`). Related: `aruaru-search` (`F:\aruaru-search`: engines and selector self-repair), `aruaru-llm` (`F:\aruaru-llm`), `RPoem`, `open-web-server`. The meta index is `F:\runo`. Locally, use `export PATH="$PATH:/c/Users/noruk/.cargo/bin"` (Git Bash); on the VPS use `~/.cargo/bin/cargo`. Secrets go through txt files at the root of `F:\` and `scp`; never print values or commit them.
+
+**Verified (2026-11-08 to 15)**
+- The 7:00 JST daily crawl runs with the right defaults (23 places, 600 searches). 11/14: 23 places succeeded; 11/15: 22 succeeded, 1 failed (Yamagata: zero results containing the query terms). Saved to GitHub as `daily_jp_YYYYMMDD`.
+- The early break (`quota` / `free search` in `crawl.rs`) only fires after `MAX_UNAVAILABLE_STREAK` consecutive failures, so the 9/29 "2 of 23 places" problem is fixed. `all_quota_exceeded` in `explain.rs` is unrelated to the crawl (it is a message of the AI explain feature).
+- Automatic vault shard rotation was verified live with throwaway repos (threshold ~1 KB, separate port and data): `-archive-2` was created and writes switched, the old shard was sealed, it chained to `-3`, and the `catalog.json` index was correct.
+- aruaru-search: excite added (4 Japanese engines); selector self-repair, auto-disable after 3 consecutive give-ups, and auto re-enable by probing (Baidu recovered by itself).
+
+**Open / next**
+1. Watch the real shard (`realdata-archive`) approach ~1 GB and rotate for real (log line `保管庫 … が上限に近づきました`).
+2. Four throwaway GitHub repos (`rrd-rotation-test-archive`, `-2`, `-3`, `rrd-rotation-test-catalog`) are **archived but not deleted** (the token cannot delete; the owner must).
+3. The request to document the open-web-server (Apache-like) ⇔ RPoem (Tomcat-like) "4-layer, 4-fold" communication and DB integration in README/CLAUDE/PORTING is **not written**: the architecture details were never supplied. Ask the user first; do not guess. The outline of the policy is in `F:\runo\CLAUDE.md` ("Deployment architecture policy").
+4. If prefectures like Yamagata keep failing with "zero results", revisit the query terms / exclusion filter.
+5. Keep checking that every morning's crawl reaches all 23 places (failures: `journalctl -u realdata-pro`).
+
+**Pitfalls**: never commit the test-only change that bypasses the 7:00 gate (`hour >= 7` in `main.rs`; it was used on the VPS only and reverted). Do not run `cargo fmt --all` (it reformats path-dependent sibling repos); use `cargo fmt -p <crate>`. Do not write Japanese files from PowerShell 5.1.
+
+---
+
+(以下は2026-09-30時点の旧い再開用メッセージ。上の2026-11-17版が最新 / The text below is the older 2026-09-30 message; the 2026-11-17 one above is current.)
+
 ### 🛑 再開用メッセージ(次回このセッションを続ける人へ、2026-09-30更新)
 
 **新しい発見(2026-09-30、要対応)**: 9/29 の実際の朝7時収集(既定600件・約22か所の設定で
