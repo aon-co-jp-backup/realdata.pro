@@ -223,6 +223,7 @@ pub fn extract_json(text: &str) -> Option<Json> {
 async fn search_raw(http: &reqwest::Client, base: &str, body: Json) -> Result<Vec<Json>> {
     let resp = http
         .post(format!("{}/aruaru_llm.v1.Llm/SearchRaw", base.trim_end_matches('/')))
+        .header("x-tenant", "realdata-pro")
         .json(&body)
         .timeout(Duration::from_secs(40))
         .send()
@@ -248,6 +249,7 @@ async fn country_news(http: &reqwest::Client, base: &str, name: &str) -> Result<
     let url = format!("{}/aruaru_llm.v1.Llm/NewsFor", base.trim_end_matches('/'));
     let j: Json = http
         .post(url)
+        .header("x-tenant", "realdata-pro")
         .json(&serde_json::json!({"country": name}))
         .timeout(Duration::from_secs(40))
         .send()

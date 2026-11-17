@@ -105,6 +105,7 @@ pub async fn complete(
     );
     let resp = http
         .post(&url)
+        .header("x-tenant", "realdata-pro")
         .json(&serde_json::json!({ "prompt": prompt }))
         .timeout(Duration::from_secs(150))
         .send()
