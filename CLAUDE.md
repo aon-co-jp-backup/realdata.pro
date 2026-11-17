@@ -48,7 +48,7 @@ cargo run -p rrd-server        # http://127.0.0.1:4701/
 **未了・次にやること**
 1. 本番の実シャード(`realdata-archive`)が約1GBに近づいたときの実際の引っ越し(ログ`保管庫 … が上限に近づきました`)を見守る。
 2. 使い捨てのGitHubリポジトリ4件(`rrd-rotation-test-archive`・`-2`・`-3`・`rrd-rotation-test-catalog`)は**2026-11-17に削除済み**(対応不要)。
-3. 「open-web-server(Apache相当)⇔RPoem(Tomcat相当)の『4層4重』通信・DB連携」をREADME/CLAUDE/PORTINGに記録する依頼は、**構成の詳細をまだ受け取っていない**ため未記録。ユーザーに詳細を聞いてから書く(推測で埋めない)。方針の骨子は`F:\runo\CLAUDE.md`の「配備アーキテクチャ方針」に記録済み。
+3. 「4層4重」の記録は**2026-11-17に完了**(下の「open-web-server ⇔ RPoem の『4層4重』…」節)。残るのは、realdata.pro の日次保存に④独立監査ログ等を足すかの**設計判断**(未実装)。
 4. 山形県のように「結果が0件」で失敗する県が繰り返すなら、検索語・除外条件を見直す。
 5. 毎朝の収集で、場所が23か所すべてに進むかを引き続き確認(失敗は`journalctl -u realdata-pro`)。
 
@@ -67,7 +67,7 @@ Repositories to resume: `realdata.pro` (local `F:\realdata.pro`; VPS `/root/repo
 **Open / next**
 1. Watch the real shard (`realdata-archive`) approach ~1 GB and rotate for real (log line `保管庫 … が上限に近づきました`).
 2. Four throwaway GitHub repos (`rrd-rotation-test-archive`, `-2`, `-3`, `rrd-rotation-test-catalog`) were **deleted on 2026-11-17** (nothing left to do).
-3. The request to document the open-web-server (Apache-like) ⇔ RPoem (Tomcat-like) "4-layer, 4-fold" communication and DB integration in README/CLAUDE/PORTING is **not written**: the architecture details were never supplied. Ask the user first; do not guess. The outline of the policy is in `F:\runo\CLAUDE.md` ("Deployment architecture policy").
+3. Documenting the "4-layer, 4-fold" setup was **done on 2026-11-17** (section "open-web-server ⇔ RPoem …" below). What remains is the **design decision** whether to add a fourth-leg independent audit log etc. to realdata.pro's daily saves (not implemented).
 4. If prefectures like Yamagata keep failing with "zero results", revisit the query terms / exclusion filter.
 5. Keep checking that every morning's crawl reaches all 23 places (failures: `journalctl -u realdata-pro`).
 
@@ -167,6 +167,55 @@ Repositories to resume: `realdata.pro` (local `F:\realdata.pro`; VPS `/root/repo
 - **毎朝の自動収集は無料の自前メタ検索(aruaru-search)だけを使う**(`free_only`)。共有キーの検索(1日100回)へは移らない。使えないときは1日20件。
 - **地図データ(OpenStreetMap)は夜(日本時間1〜6時)に先取得**して `osm/` に保存し(`osm::refresh`、1日30件、90日で一巡)、世界リサーチでは保存済みを使う。数の多い分類をその場で問い合わせると時間切れになるため。
 - `RRD_CRAWL_FORCE=1` を付けて起動すると、今日のぶんがあっても、起動後に1回だけ毎朝の自動収集を実行する(動作確認用)。動作確認のあとは外すこと。
+
+## open-web-server ⇔ RPoem の「4層4重」通信・DB連携(2026-11-17 調査・確認、日英)/ "4-layer, 4-fold" communication and DB integration
+
+### 日本語
+
+**役割**: `open-web-server` = Apache(+Nginx)相当の前面Webサーバー、`RPoem` = Tomcat相当のアプリケーションサーバー。一般的な「Apache→Tomcat→DB」の3層構成(Apacheが静的配信と負荷分散、Tomcatがアプリ、DBが永続化。[Web Application Clusters](https://mockflow.com/examples/web-application-cluster-architecture-diagram-using-ideaboard/)、[Atlassian: Apache と Tomcat の接続](https://ja.confluence.atlassian.com/x/p4nOD))を土台にしつつ、本プロジェクトの「4層4重」は**独自の目標アーキテクチャ**で、定義の正本は[`open-web-server/CLAUDE.md`](https://github.com/aon-co-jp/open-web-server)「拡張要件(2026-07-11)」節(出典つき、日英Web検索で裏取り済み)。ここへ要約する。
+
+**4層(設計の4本柱)**
+1. **VersionLess API × バージョン管理のハイブリッド**: APIはバージョンレス、データは `aruaru-db`(Git-on-SQL)でコミット単位に版管理。
+2. **Git管理 + ディスク冗長化**: 全変更をコミットで記録し、`open-raid-z`(ZFS類似の冗長化)を永続化層に。Gitの履歴とは独立に、ファイルシステムのスナップショットが別系統の復元手段になる。
+3. **通信層の四重化**: ①TCP-IP(権威パス)②UDP-IP(即時通知)③QUIC(MPQUICは範囲外)④MPTCP/SCTP(カーネル実装が使えない環境ではユーザー空間の`aggligator`で代替。実金融機関の物理経路冗長化はSD-WANが主流で、これは**次善策**と明記済み)。`open-web-server-wire`。
+4. **DB書き込みの四重化**: ①PostgreSQL ②aruaru-db ③マルチリージョン同期レプリケーション ④独立した監査用トランザクションログ(①〜③の複製ではなく、突き合わせ用の独立した検証手段)。`open-web-server-ledger`。
+
+別軸として、`open-web-server-wire` の**4層防御通信**(TLS 1.3 → 相互認証 → AEAD暗号化 → seq/timestampリプレイ対策)がある。これは伝送路の冗長化(上の3)とは別のセキュリティ層。
+
+**通信とDBの接続点(経路)**: クライアント → `open-web-server`(wire) → `Ledger`(冪等WAL+3ホップコミット+独立監査ログ) → RPoemゲートウェイ(`open-runo-gateway`、VPSでは127.0.0.1:8140) の Connect `Admin/DbMutate`(`x-api-key`必須。環境変数 `OPEN_RUNO_API_KEY`) → `aruaru-db`。`db_commit_id`をクライアントへ返し、同じキーの再送は同一の受領票(冪等)。
+
+**確認できた現状(2026-11-17)**
+- 実装・検証済み: Ledgerの冪等WAL・監査ログ・マルチリージョン複製(実SQLite2リージョン)・PostgreSQL WAL(WSL2のライブPostgreSQLで検証)、wireのTCP/UDP/QUIC(単一経路)と、ユーザー空間の多経路集約。VPSでは、LedgerとRPoemゲートウェイの配線(11-14)と、VPS上での同形のDbMutate実送信(`db_commit_id`返却・同キー再送で同一受領票)を確認済み。
+- 未了: 実際のLedger書き込みの本番通し、(1)の読み出し側(commit_id指定の過去状態照会API)、MPQUIC、カーネルMPTCP/SCTP、RPoemゲートウェイのHTTP/2(前面はHTTP/1.1のみ)。
+- **`realdata.pro` との関係(正直な現状)**: `rrd-server`(127.0.0.1:4701)は**この4層4重の書き込み経路(Ledger→DbMutate)を使っていない**。収集データはGitHubの非公開保管庫(複数シャード+`catalog.json`)へ保存し、`realdata-aruaru-db`(専用プロセス、版管理用)も別に持つ。つまり realdata.pro は上記のうち「前面(open-web-server)の背後で動く1アプリ」にすぎず、4重の書き込みを受ける対象には**まだなっていない**。
+
+**今後(未実装・要判断)**: realdata.pro の日次保存に、④独立監査ログ(保存名・サイズ・SHA-256・時刻を追記専用ファイルへ)を足すのが、最小で実害のない第一歩。①〜③(PostgreSQL・Ledger経由のaruaru-db・マルチリージョン)をどこまで適用するかは設計判断が要る。
+
+出典: [open-web-server/CLAUDE.md](https://github.com/aon-co-jp/open-web-server)、[CMT-SCTP and MPTCP](https://www.mdpi.com/2079-9292/11/15/2384)、[Multipath QUIC (CoNEXT 2017)](https://dl.acm.org/doi/10.1145/3143361.3143370)、[Cisco: SD-WAN for Financial Services](https://www.cisco.com/c/dam/m/en_us/solutions/industries/financial-services/new-financial-services-landscape-of-networking/SD-WAN-for-Financial-Services.pdf)、[Azure: Designing for redundancy](https://learn.microsoft.com/en-us/azure/well-architected/reliability/redundancy)、[PostgreSQL on ZFS](https://sumguy.com/postgresql-on-zfs-tuning-snapshots/)。2026-11-17の再検索では、「独立した監査ログを主DBと別に持つ」設計そのものを裏づける独立した資料は見つからなかった(ベンダー資料のみ)。この点は設計上の判断であり、外部の標準ではない。
+
+### English
+
+**Roles**: `open-web-server` = the front web server (Apache/Nginx-like), `RPoem` = the application server (Tomcat-like). The common "Apache → Tomcat → DB" 3-tier layout (Apache serves static files and balances load, Tomcat runs the app, the DB persists; see [Web Application Clusters](https://mockflow.com/examples/web-application-cluster-architecture-diagram-using-ideaboard/) and [Atlassian: connecting Apache to Tomcat](https://ja.confluence.atlassian.com/x/p4nOD)) is the base. This project's "4-layer, 4-fold" is **its own target architecture**; the source of truth is the "Extended requirements (2026-07-11)" section of [`open-web-server/CLAUDE.md`](https://github.com/aon-co-jp/open-web-server) (cited, verified by Japanese and English web searches). Summary:
+
+**The four layers**
+1. **VersionLess API × version control hybrid**: the API is versionless; data is versioned per commit in `aruaru-db` (Git-on-SQL).
+2. **Git + disk redundancy**: every change is a commit; `open-raid-z` (ZFS-like redundancy) is the persistence layer, and filesystem snapshots give a second, independent restore path besides Git history.
+3. **Four-fold transport**: (1) TCP-IP (authoritative path), (2) UDP-IP (instant notification), (3) QUIC (MPQUIC out of scope), (4) MPTCP/SCTP (where kernel support is unavailable, the user-space `aggligator` is used; real financial institutions mostly use SD-WAN for path redundancy, so this is documented as a **second-best substitute**). Crate: `open-web-server-wire`.
+4. **Four-fold DB writes**: (1) PostgreSQL, (2) aruaru-db, (3) multi-region synchronous replication, (4) an independent audit transaction log (not a copy of 1–3 but an independent means of cross-checking). Crate: `open-web-server-ledger`.
+
+A separate axis: the **4-layer defensive channel** in `open-web-server-wire` (TLS 1.3 → mutual auth → AEAD encryption → seq/timestamp replay protection). It is a security layer, distinct from the transport redundancy in item 3.
+
+**Where communication meets the DB**: client → `open-web-server` (wire) → `Ledger` (idempotent WAL + 3-hop commit + independent audit log) → the RPoem gateway (`open-runo-gateway`, 127.0.0.1:8140 on the VPS) via Connect `Admin/DbMutate` (`x-api-key` required; env `OPEN_RUNO_API_KEY`) → `aruaru-db`. The `db_commit_id` is returned to the client, and a resend with the same key returns the same receipt (idempotent).
+
+**Verified status (2026-11-17)**
+- Implemented and tested: Ledger idempotent WAL, audit log, multi-region replication (two real SQLite regions), PostgreSQL WAL (against a live PostgreSQL in WSL2); wire TCP/UDP/QUIC (single path) and user-space multipath aggregation. On the VPS: the Ledger→RPoem gateway wiring (11-14) and a real DbMutate send of the same shape as the Ledger's (returns `db_commit_id`; a resend returns the same receipt).
+- Open: a real production Ledger write end to end, the read side of layer 1 (query past state by `commit_id`), MPQUIC, kernel MPTCP/SCTP, HTTP/2 on the RPoem gateway (the front is HTTP/1.1 only).
+- **Relation to `realdata.pro` (honest status)**: `rrd-server` (127.0.0.1:4701) **does not use this 4-layer, 4-fold write path (Ledger → DbMutate)**. It stores collected data in private GitHub vault repositories (several shards plus `catalog.json`) and has its own `realdata-aruaru-db` process (for versioning). So realdata.pro is just one application running behind the front server; it is **not yet** a target of the four-fold writes.
+
+**Next (not implemented, needs a decision)**: the smallest harmless first step is a fourth-leg independent audit log for realdata.pro's daily saves (name, size, SHA-256 and time appended to an append-only file). How far to apply (1)–(3) (PostgreSQL, aruaru-db via the Ledger, multi-region) is a design decision.
+
+A fresh search on 2026-11-17 found no independent source supporting the specific idea of keeping an audit log independent of the primary DB (vendor material only). That is a design choice of this project, not an external standard.
+
 
 ## 保管庫の複数リポジトリ自動引っ越し(2026-09-28、2026-10-14追記)
 

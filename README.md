@@ -86,6 +86,12 @@ query { regression(name: "sales", target: "sales", features: ["qty", "ad_cost"])
 
 *English: when one vault repository nears ~1 GB the server auto-creates the next private repository and switches writes; old shards stay read-only. Verified live on 2026-11-08 with throwaway repositories. See [PORTING.md](PORTING.md). To resume work on another account, see the resume message in [CLAUDE.md](CLAUDE.md).*
 
+## 前面(open-web-server)・アプリサーバー(RPoem)との関係
+
+前面は `open-web-server`(Apache相当)、アプリサーバーは `RPoem`(Tomcat相当)。両者の「4層4重」通信・DB連携の定義(通信の四重化・DB書き込みの四重化など)と、realdata.pro がその書き込み経路を**まだ使っていない**という現状は [CLAUDE.md](CLAUDE.md)・[PORTING.md](PORTING.md) に日英で記録した。
+
+*English: the front is `open-web-server` (Apache-like) and the app server is `RPoem` (Tomcat-like). The definition of their "4-layer, 4-fold" communication and DB integration, and the honest status that realdata.pro does **not yet** use that write path, are in [CLAUDE.md](CLAUDE.md) and [PORTING.md](PORTING.md) (JA/EN).*
+
 ## 構成
 
 ```
