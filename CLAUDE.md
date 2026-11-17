@@ -47,7 +47,7 @@ cargo run -p rrd-server        # http://127.0.0.1:4701/
 
 **未了・次にやること**
 1. 本番の実シャード(`realdata-archive`)が約1GBに近づいたときの実際の引っ越し(ログ`保管庫 … が上限に近づきました`)を見守る。
-2. 使い捨てのGitHubリポジトリ4件(`rrd-rotation-test-archive`・`-2`・`-3`・`rrd-rotation-test-catalog`)は**アーカイブ済みだが未削除**(トークンに削除権限が無い。所有者が削除)。
+2. 使い捨てのGitHubリポジトリ4件(`rrd-rotation-test-archive`・`-2`・`-3`・`rrd-rotation-test-catalog`)は**2026-11-17に削除済み**(対応不要)。
 3. 「open-web-server(Apache相当)⇔RPoem(Tomcat相当)の『4層4重』通信・DB連携」をREADME/CLAUDE/PORTINGに記録する依頼は、**構成の詳細をまだ受け取っていない**ため未記録。ユーザーに詳細を聞いてから書く(推測で埋めない)。方針の骨子は`F:\runo\CLAUDE.md`の「配備アーキテクチャ方針」に記録済み。
 4. 山形県のように「結果が0件」で失敗する県が繰り返すなら、検索語・除外条件を見直す。
 5. 毎朝の収集で、場所が23か所すべてに進むかを引き続き確認(失敗は`journalctl -u realdata-pro`)。
@@ -66,7 +66,7 @@ Repositories to resume: `realdata.pro` (local `F:\realdata.pro`; VPS `/root/repo
 
 **Open / next**
 1. Watch the real shard (`realdata-archive`) approach ~1 GB and rotate for real (log line `保管庫 … が上限に近づきました`).
-2. Four throwaway GitHub repos (`rrd-rotation-test-archive`, `-2`, `-3`, `rrd-rotation-test-catalog`) are **archived but not deleted** (the token cannot delete; the owner must).
+2. Four throwaway GitHub repos (`rrd-rotation-test-archive`, `-2`, `-3`, `rrd-rotation-test-catalog`) were **deleted on 2026-11-17** (nothing left to do).
 3. The request to document the open-web-server (Apache-like) ⇔ RPoem (Tomcat-like) "4-layer, 4-fold" communication and DB integration in README/CLAUDE/PORTING is **not written**: the architecture details were never supplied. Ask the user first; do not guess. The outline of the policy is in `F:\runo\CLAUDE.md` ("Deployment architecture policy").
 4. If prefectures like Yamagata keep failing with "zero results", revisit the query terms / exclusion filter.
 5. Keep checking that every morning's crawl reaches all 23 places (failures: `journalctl -u realdata-pro`).
