@@ -279,3 +279,7 @@ Reading into `serde_json::Value` gives almost no speed-up even with SIMD (188 ms
 - **WASM по-прежнему остаётся технологией для интерфейса.** Изменилось лишь то, что вызываемый им API теперь построен на Connect.
 - Интерфейсы, форма которых задана внешним стандартом (ACME, обратные вызовы OAuth, вебхуки сторонних сервисов, проверки работоспособности, статические файлы, OTLP), остаются обычным HTTP.
 - **Если есть сомнения — выбирайте Connect.**
+
+
+## 引っ越し・再開 / Resume
+最新の到達点と再開用メッセージ(日英)は [`PORTING.md`](PORTING.md) 末尾「2026-11-19 別アカウントでの再開用メモ」。 / The latest status and a paste-ready resume message (JA/EN) are at the end of [`PORTING.md`](PORTING.md) ("Resume memo for another account", 2026-11-19).
