@@ -1,5 +1,42 @@
 # PORTING / 設計と計画
 
+## やさしい現状と次の一歩 / Where we are and what is next
+
+### 日本語
+**できていること**
+- 世界リサーチ(国・都道府県・市の選択、分野のチェック、翻訳、AIのまとめ)。
+- 毎朝7時の日本全国23か所の自動収集(GitHubの非公開の保管庫に保存)。
+- 無料の自前検索 `aruaru-search`(約130言語、壊れたら AI が直す、使いすぎで止められたら休んで自動でもどる)。
+- 画面の「検索と毎朝の自動収集の状態」。再起動しても直近の収集が見られます。
+- 保管庫が大きくなったら新しいリポジトリへ自動で引っ越します。
+
+**最近の実測(VPSのログ)**: 11/14〜11/19 の毎朝の収集は、23か所がほぼ毎回成功。失敗が1か所出た日もありますが、そこで止まらずに最後まで進みます。失敗の中身は、検索元が止めた場合と、その場所に該当する情報がなかった場合(いまは「該当なし」として別に数えます)に分かれます。
+
+**これから**
+1. 検索元ごとの失敗の傾向を、数日分ためて見る(Bing・Yahoo!は「検索語の一部しか反映されない」、Braveは「アクセス過多」が多い)。
+2. Naver・Baiduの品質調整。
+3. 日本語・英語・中国語以外の言語でのリサーチ。
+4. 各社の無料枠を毎朝確認する機能。
+5. ドメインは `realdata.pro`。別の名前にするなら、先に本人が決めます。
+
+### English (simple and friendly)
+**What already works**
+- World research: pick a country, a prefecture and a city, tick topics, translate, and get an AI summary.
+- The daily crawl at 7:00 for 23 places across Japan, saved in a private GitHub vault.
+- Our own free search, `aruaru-search`: about 130 languages, an AI fixes it when it breaks, and it rests and returns by itself when a service says "too many requests".
+- The status box "search and daily crawl". It shows the latest run even after a restart.
+- When the vault gets big, it moves to a new repository by itself.
+
+**Recent real numbers (VPS logs)**: From Nov 14 to Nov 19, the daily crawl almost always collected all 23 places. On some days one place failed, but the crawl did not stop there. A failure is one of two things: a search service said no, or the place simply had nothing matching (we now count that separately as "nothing found").
+
+**Next steps**
+1. Collect a few more days of data and look at how each search source fails (Bing and Yahoo! often return "only part of the words were used", and Brave often says "too many requests").
+2. Tune the quality of Naver and Baidu.
+3. Research in languages other than Japanese, English and Chinese.
+4. A daily check of each company's free plan.
+5. The domain stays `realdata.pro`. If you want another name, the owner decides first.
+
+
 ## 設計思想
 
 1. **誰でも使える**: 大企業・中小企業・これから起業する人の誰もが、専門知識なしで使えること。

@@ -3,10 +3,39 @@
 **誰でも使える、Rust製・オープンソースのデータ分析プラットフォーム**(SAS Viyaの考え方を参考にした自由実装)。
 大企業にも、中小企業にも、これから起業する人にも。CSVをドラッグするだけで、クレンジング・集計・予測まで。
 
-公式サイト(準備中): https://realdata.pro
+公式サイト: https://realdata.pro
 
 > SAS / SAS Viya は SAS Institute Inc. の商標です。本プロジェクトは SAS Institute とは無関係で、
 > 同社のコード・API・仕様を複製するものではありません。機能の方向性のみを参考にしています。
+
+## やさしい説明 / Plain-language guide
+
+### 日本語
+**realdata.pro は、データを集めて、整理して、グラフや文章で分かりやすく見せてくれる、無料の道具です。**
+
+- **なにができるの?** 表(CSVファイル)をドラッグするだけで、集計・グラフ・予測ができます。むずかしい知識はいりません。
+- **世界リサーチ**: 「調べたいこと」と「国や地域」を選ぶと、そこの言葉でニュースやWebを探して、AIが「いま何が起きているか」「チャンスは何か」「気をつけることは何か」をまとめます。どの話も、元の記事へのリンクが付いています。
+- **毎朝の自動収集**: 毎朝7時(日本時間)に、日本じゅうの23か所について、観光・仕事・工場見学などの情報を自分で集めて、GitHubの非公開の保管庫に保存します。人が何もしなくても続きます。
+- **お金がかかりません**: 有料の検索サービスは使いません。無料で動く自前の検索(`aruaru-search`)と、無料のAI(`aruaru-llm`)を使います。
+- **公開サイト**: https://realdata.pro/ (いま動いています)。
+
+**うまくいかなかった日は?** 検索サービスが「使いすぎです」と止めることがあります。そのときは、むりに通り抜けず、少し休んでから自動でもどります。「その場所に該当する情報がなかった」場合は、失敗ではなく「該当なし」と数えます。
+
+**投資のアドバイスではありません。** 画面にある金融のサンプルは、練習用のシミュレーションです。
+
+### English (simple and friendly)
+**realdata.pro is a free tool. It collects data, tidies it up, and shows it to you as charts and easy words.**
+
+- **What can it do?** Drop a table (a CSV file) on the page. It can add things up, draw charts, and make guesses about the future. You do not need hard skills.
+- **World research**: Pick a topic and a country or region. The tool looks for news and web pages in the local language. Then an AI writes what is happening, where the chances are, and what to watch out for. Every point has a link to the real article.
+- **Daily auto-collection**: Every morning at 7:00 (Japan time) it gathers information about 23 places in Japan, such as sightseeing, jobs, and factory tours. It saves everything in a private GitHub vault. It keeps going without anyone pressing a button.
+- **It costs nothing**: It does not use paid search services. It uses its own free search (`aruaru-search`) and a free AI (`aruaru-llm`).
+- **The public site**: https://realdata.pro/ (it is running now).
+
+**What if a day goes wrong?** A search service may say, "You asked too much, please wait." The tool does not sneak past this. It rests for a while and then comes back by itself. If a place simply has no matching information, we count it as "nothing found", not as a failure.
+
+**This is not investment advice.** The money screens are practice simulations.
+
 
 ## 🌍 世界リサーチ
 

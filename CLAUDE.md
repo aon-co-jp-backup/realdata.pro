@@ -1,5 +1,31 @@
 # 開発方針(realdata.pro)
 
+## やさしい要約 / Plain-language summary
+
+### 日本語(AIと開発者への約束ごと)
+1. **こわさない**: `cargo fmt --all` は使いません(ほかのリポジトリまで書きかえてしまうため)。かわりに `cargo fmt-own` / `lint-own` / `test-own` を使います。
+2. **先に道具をそろえる**: ビルドの前に `scripts\fetch-deps.ps1`(Windows)か `scripts/fetch-deps.sh` で `.deps/` を作ります。`deps.lock` が「どの版を使うか」を決めています。
+3. **秘密は見せない**: トークンやパスワードは `F:\` 直下のtxtから読み、画面にもコミットにも出しません。
+4. **RESTは作らない**: 画面やcurlから呼ぶAPIはConnect(`POST /パッケージ.Service/Method`)だけにします。
+5. **うまくいったか、本物で確かめる**: テストが通っただけで「できた」と言わず、本番(VPS)で動きを見てから報告します。
+6. **VPSを再起動する前に**: 毎朝7時から約3時間半は自動収集が動いています。その間は再起動しません。
+7. **ことば**: 人への返事は日本語だけで書きます。
+
+**いまの状態(2026-11-19)**: 毎朝の自動収集は動いていて、直近は23か所すべてで集まりました(うち1か所は「該当なし」)。再起動しても「直近の収集」の表示がもどります。のこりの仕事は、検索元ごとの品質調整・日英中以外の言語・各社の無料枠の毎朝確認です。
+
+### English (simple and friendly)
+Rules for the AI and for developers:
+1. **Do not break things**: Never run `cargo fmt --all`. It can rewrite other repositories too. Use `cargo fmt-own`, `lint-own` and `test-own` instead.
+2. **Get the parts first**: Before you build, run `scripts\fetch-deps.ps1` (Windows) or `scripts/fetch-deps.sh` to make the `.deps/` folder. The file `deps.lock` says which version of each part to use.
+3. **Keep secrets secret**: Read tokens and passwords from text files at the top of `F:\`. Never print them and never commit them.
+4. **No new REST**: APIs that a page or `curl` calls use Connect only (`POST /package.Service/Method`).
+5. **Check with the real thing**: Passing tests is not enough to say "done". Look at the real server (the VPS) first, and then report.
+6. **Before restarting the VPS**: The daily crawl runs from 7:00 for about three and a half hours. Do not restart during that time.
+7. **Language**: Reply to the person in Japanese only.
+
+**Where we are (2026-11-19)**: The daily crawl is running. The latest run collected all 23 places (one of them was "nothing found"). After a restart, the "last crawl" box shows the latest run again. What is left: tuning the quality of each search source, languages other than Japanese, English and Chinese, and a daily check of each company's free plan.
+
+
 作業ドライブは `F:\realdata.pro`。全リポジトリ共通ルールは
 [`open-raid-z/CLAUDE.md`](https://github.com/aon-co-jp/open-raid-z) を正本として参照すること。
 
