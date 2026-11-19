@@ -279,7 +279,7 @@ async fn collect(st: &Arc<AppState>) -> anyhow::Result<()> {
         ));
     }
     let mut merged: Option<String> = None;
-    let (mut ok, mut failed) = (0usize, 0usize);
+    let (mut ok, mut failed, mut empty) = (0usize, 0usize, 0usize);
     let mut unavailable_streak = 0usize;
     eprintln!(
         "realdata.pro: 毎朝の自動収集を開始します(場所 {} か所、検索の組 {} 件、無料検索 {})",
@@ -332,6 +332,12 @@ async fn collect(st: &Arc<AppState>) -> anyhow::Result<()> {
                         }
                     }
                 }
+            }
+            Err(e) if format!("{e:#}").contains("1件も集められませんでした") => {
+                // 検索元の障害ではなく、その場所・分野に該当する情報が無かった(検索語を含まない結果が除外された)
+                empty += 1;
+                unavailable_streak = 0;
+                eprintln!("realdata.pro: 自動収集 {label}: 該当する情報なし(失敗ではありません)");
             }
             Err(e) => {
                 failed += 1;
@@ -393,7 +399,7 @@ async fn collect(st: &Arc<AppState>) -> anyhow::Result<()> {
             error: String::new(),
         });
     }
-    eprintln!("realdata.pro: 毎朝の自動収集を保存しました({name}、{ok}か所成功・{failed}か所失敗、保存先 {})", if saved_remote { "GitHub" } else { "手元(後で送り直し)" });
+    eprintln!("realdata.pro: 毎朝の自動収集を保存しました({name}、{ok}か所成功・{empty}か所該当なし・{failed}か所失敗、保存先 {})", if saved_remote { "GitHub" } else { "手元(後で送り直し)" });
     Ok(())
 }
 
